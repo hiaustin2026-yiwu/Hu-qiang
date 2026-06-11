@@ -6,6 +6,8 @@ import { getDictionary } from "@/messages";
 
 type PageProps = { params: Promise<{ locale: string }> };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboardPage({ params }: PageProps) {
   const { locale: value } = await params;
   const locale = getLocaleFromParams(value);
