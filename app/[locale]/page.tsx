@@ -4,6 +4,7 @@ import { AISourcingFlow } from "@/components/AISourcingFlow";
 import { ContactButtons } from "@/components/ContactButtons";
 import { ProductImage } from "@/components/ProductImage";
 import { SafeImage } from "@/components/SafeImage";
+import { products as mockProducts, suppliers as mockSuppliers } from "@/data";
 import { prisma } from "@/lib/db";
 import { getLocaleFromParams, localePath } from "@/lib/i18n";
 import { getDictionary } from "@/messages";
@@ -35,20 +36,7 @@ export default async function HomePage({ params }: PageProps) {
   const { locale: value } = await params;
   const locale = getLocaleFromParams(value);
   const dict = getDictionary(locale);
-  const [dbMerchants, dbProducts] = await Promise.all([
-    prisma.merchant.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5
-    }),
-    prisma.product.findMany({
-      include: {
-        merchant: true,
-        images: { orderBy: { sort: "asc" } }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 30
-    })
-  ]);
+  const { dbMerchants, dbProducts } = await getHomeData();
   const featuredProducts = dbProducts.slice(0, 6);
   const featuredCategories = Array.from(new Set(dbProducts.map((product) => product.category))).slice(0, 8);
 
@@ -239,4 +227,53 @@ export default async function HomePage({ params }: PageProps) {
       </section>
     </main>
   );
+}
+
+async function getHomeData() {
+  try {
+    const [dbMerchants, dbProducts] = await Promise.all([
+      prisma.merchant.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 5
+      }),
+      prisma.product.findMany({
+        include: {
+          merchant: true,
+          images: { orderBy: { sort: "asc" } }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 30
+      })
+    ]);
+    return { dbMerchants, dbProducts };
+  } catch {
+    const dbMerchants = mockSuppliers.slice(0, 5).map((supplier) => ({
+      booth: supplier.boothNumber,
+      country: "China",
+      district: supplier.marketDistrict,
+      id: supplier.id,
+      market: "Yiwu International Trade Market",
+      name: supplier.companyNameEn,
+      verified: supplier.verified
+    }));
+    const dbProducts = mockProducts.slice(0, 30).map((product) => {
+      const supplier = mockSuppliers.find((item) => item.id === product.supplierId) ?? mockSuppliers[0];
+      return {
+        category: product.tags[0] ?? product.categoryId,
+        currency: "USD",
+        id: product.id,
+        images: product.images.map((imageUrl) => ({ imageUrl })),
+        merchant: {
+          coverImage: supplier.coverImage,
+          name: supplier.companyNameEn
+        },
+        moq: product.moq,
+        nameCN: product.nameZh,
+        nameEN: product.nameEn,
+        price: product.priceRange.replace("$", ""),
+        sku: product.sku
+      };
+    });
+    return { dbMerchants, dbProducts };
+  }
 }
