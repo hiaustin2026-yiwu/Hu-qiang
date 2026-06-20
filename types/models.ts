@@ -25,6 +25,10 @@ export type Category = {
 export type Supplier = {
   id: string;
   slug: string;
+  storefrontImage: string;
+  businessName: string;
+  category: string;
+  marketAddress: string;
   companyNameZh: string;
   companyNameEn: string;
   boothNumber: string;

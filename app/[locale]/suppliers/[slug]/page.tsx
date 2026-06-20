@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { SafeImage } from "@/components/SafeImage";
 import { SupplierGallery } from "@/components/SupplierGallery";
 import { brandConfig } from "@/config/brand";
 import { locales } from "@/config/i18n";
@@ -51,50 +52,42 @@ export default async function SupplierDetailPage({ params }: PageProps) {
 
   return (
     <main className="pb-24">
-      <section id="banner" className="relative overflow-hidden bg-[#0d241c] text-white">
-        <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: `url(${firstImage([supplier.coverImage])})` }} />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#071611] via-[#071611]/86 to-[#071611]/30" />
-        <div className="container-page relative grid min-h-[520px] gap-10 py-16 lg:grid-cols-[1fr_360px] lg:items-center">
-          <div>
-            <Link href={localePath(locale, "/suppliers")} className="text-sm font-black uppercase text-[#ffd166]">
-              ← {dict.nav.suppliers}
-            </Link>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <div className="grid h-20 w-20 place-items-center rounded-[18px] bg-white bg-cover bg-center text-3xl soft-shadow" style={{ backgroundImage: `url(${supplier.logoImage ?? supplier.coverImage})` }}>
-                <span className="sr-only">Company logo</span>
-              </div>
-              <div className="min-w-0">
+      <section id="banner" className="bg-[#f5f7f6] py-10">
+        <div className="container-page">
+          <Link href={localePath(locale, "/suppliers")} className="text-sm font-black uppercase text-[#08784c]">
+            ← {dict.nav.suppliers}
+          </Link>
+          <div className="mt-6 overflow-hidden rounded-lg border border-[#dfe5e2] bg-white shadow-[0_18px_48px_rgba(16,22,21,0.12)]">
+            <SafeImage src={supplier.storefrontImage} alt={`${supplier.businessName} storefront`} className="aspect-video max-h-[660px] w-full object-cover" />
+            <div className="grid gap-8 p-6 md:p-8 lg:grid-cols-[1fr_360px]">
+              <div>
                 <div className="flex flex-wrap gap-2">
-                  {supplier.verified ? <Badge>{dict.common.verifiedSupplier}</Badge> : null}
-                  {supplier.goldSupplier ? <Badge>{dict.common.goldSupplier}</Badge> : null}
-                  <Badge>{supplier.supplierType ?? dict.common.factory}</Badge>
+                  {supplier.verified ? <span className="rounded-full bg-[#e9f8f1] px-3 py-1 text-xs font-black uppercase text-[#08784c]">Verified Supplier</span> : null}
+                  <span className="rounded-full bg-[#f1f3f2] px-3 py-1 text-xs font-black uppercase text-[#4f5b56]">{supplier.supplierType ?? dict.common.factory}</span>
                 </div>
-                <h1 className="mt-4 text-4xl font-black leading-tight tracking-normal md:text-6xl">{supplier.companyNameEn}</h1>
-                <p className="mt-3 text-xl font-black text-white/82">{supplier.companyNameZh}</p>
+                <h1 className="mt-4 text-4xl font-black leading-tight tracking-normal text-[#101615] md:text-5xl">{supplier.businessName}</h1>
+                <p className="mt-2 text-lg font-bold text-[#5f6864]">{supplier.companyNameZh}</p>
+                <p className="mt-6 max-w-3xl text-base leading-7 text-[#39413e]">{supplierDescription(supplier, locale)}</p>
+                <div className="mt-6 grid gap-3 text-sm md:grid-cols-2">
+                  <InfoLine label="Main Products" value={supplier.category} />
+                  <InfoLine label="Contact" value={`${supplier.contactName ?? "Sourcing Desk"} · ${supplier.phone}`} />
+                  <InfoLine label="Email" value={supplier.email} />
+                  <InfoLine label="Address" value={supplierAddress(supplier, locale)} />
+                </div>
               </div>
-            </div>
-            <p className="mt-8 max-w-3xl text-lg leading-8 text-white/78">{supplierDescription(supplier, locale)}</p>
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <HeroMetric label="Rating" value={`${supplier.rating.toFixed(1)} ★★★★★`} />
-              <HeroMetric label="AI Score" value={`${supplier.aiTrustScore ?? 88}/100`} />
-              <HeroMetric label="Market" value={`${supplier.marketDistrict} ${supplier.floor ?? ""}`} />
+              <aside className="rounded-lg bg-[#0d241c] p-5 text-white">
+                <h2 className="text-2xl font-black">{dict.common.contactSupplier}</h2>
+                <p className="mt-3 text-sm leading-6 text-white/75">{supplier.marketAddress}</p>
+                <div className="mt-6 grid gap-3">
+                  <a className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#0b8f5a] px-5 font-black text-white" href={`https://wa.me/${supplier.whatsapp}`}>WhatsApp</a>
+                  <a className="inline-flex min-h-12 items-center justify-center rounded-md bg-white px-5 font-black text-[#013f29]" href={`mailto:${supplier.email}`}>Email</a>
+                  <Link className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#ef3340] px-5 font-black text-white" href={localePath(locale, "/contact")}>
+                    Send Inquiry
+                  </Link>
+                </div>
+              </aside>
             </div>
           </div>
-          <aside className="rounded-[24px] border border-white/20 bg-white/12 p-5 backdrop-blur-xl">
-            <h2 className="text-2xl font-black">{dict.common.contactSupplier}</h2>
-            <p className="mt-3 text-sm leading-6 text-white/72">{supplierAddress(supplier, locale)}</p>
-            <div className="mt-6 grid gap-3">
-              <a className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#0b8f5a] px-5 font-black text-white" href={`https://wa.me/${supplier.whatsapp}`}>
-                WhatsApp
-              </a>
-              <a className="inline-flex min-h-12 items-center justify-center rounded-md bg-white px-5 font-black text-[#013f29]" href={`mailto:${supplier.email}`}>
-                Email
-              </a>
-              <Link className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#ef3340] px-5 font-black text-white" href={localePath(locale, "/contact")}>
-                Send Inquiry
-              </Link>
-            </div>
-          </aside>
         </div>
       </section>
 

@@ -54,7 +54,7 @@ export function ProductInquiryForm({ defaultMessage, merchantId, productId }: Pr
       <h2 className="mt-2 text-3xl font-black tracking-normal">Send inquiry to supplier</h2>
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <InquiryInput label="Name" name="buyerName" />
-        <InquiryInput label="Email" name="buyerEmail" />
+        <InquiryInput label="Email" name="buyerEmail" type="email" required />
         <InquiryInput label="WhatsApp" name="buyerWhatsapp" />
         <InquiryInput label="Country" name="country" />
         <InquiryInput label="Quantity" name="quantity" />
@@ -81,11 +81,11 @@ export function ProductInquiryForm({ defaultMessage, merchantId, productId }: Pr
   );
 }
 
-function InquiryInput({ label, name }: { label: string; name: string }) {
+function InquiryInput({ label, name, required = false, type = "text" }: { label: string; name: string; required?: boolean; type?: string }) {
   return (
     <label className="grid gap-2 text-sm font-black text-[#39413e]">
       {label}
-      <input name={name} className="min-h-12 rounded-md border border-[#dde4e0] px-4 outline-none focus:border-[#013f29]" />
+      <input name={name} type={type} required={required} className="min-h-12 rounded-md border border-[#dde4e0] px-4 outline-none focus:border-[#013f29]" />
     </label>
   );
 }

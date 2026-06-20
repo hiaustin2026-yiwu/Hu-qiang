@@ -4,6 +4,7 @@ import { AISourcingFlow } from "@/components/AISourcingFlow";
 import { ContactButtons } from "@/components/ContactButtons";
 import { ProductImage } from "@/components/ProductImage";
 import { SafeImage } from "@/components/SafeImage";
+import { VerifiedSupplierGrid } from "@/components/VerifiedSupplierGrid";
 import { products as mockProducts, suppliers as mockSuppliers } from "@/data";
 import { prisma } from "@/lib/db";
 import { getLocaleFromParams, localePath } from "@/lib/i18n";
@@ -136,6 +137,24 @@ export default async function HomePage({ params }: PageProps) {
       </section>
 
       <AISourcingFlow locale={locale} dict={dict} />
+
+      <section id="verified-suppliers" className="bg-[#f5f7f6] py-20">
+        <div className="container-page">
+          <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <p className="font-black uppercase text-[#08784c]">Verified in Yiwu</p>
+              <h2 className="mt-2 text-4xl font-black tracking-normal text-[#101615] md:text-5xl">Verified Yiwu Christmas Suppliers</h2>
+            </div>
+            <p className="max-w-xl text-[#5f6864]">Real storefronts from Yiwu Christmas product market</p>
+          </div>
+          <VerifiedSupplierGrid locale={locale} suppliers={mockSuppliers} limit={6} />
+          <div className="mt-8 text-center">
+            <Link href={localePath(locale, "/suppliers")} className="inline-flex min-h-12 items-center justify-center rounded-md border border-[#013f29] px-6 font-black text-[#013f29]">
+              View All Verified Suppliers
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <section id="categories" className="container-page py-20">
         <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">

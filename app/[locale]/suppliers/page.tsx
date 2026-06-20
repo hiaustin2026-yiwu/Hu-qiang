@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { VerifiedSupplierGrid } from "@/components/VerifiedSupplierGrid";
 import { brandConfig } from "@/config/brand";
-import { categories, products, suppliers } from "@/data";
+import { products, suppliers } from "@/data";
 import { firstImage, productDisplayName, productPriceRange, supplierDisplayName } from "@/lib/format";
 import { getLocaleFromParams, localePath } from "@/lib/i18n";
 import { getDictionary } from "@/messages";
@@ -58,45 +59,11 @@ export default async function SuppliersPage({ params }: PageProps) {
         <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="font-black uppercase text-[#b91c1c]">{dict.common.verifiedSupplier} / {dict.common.goldSupplier}</p>
-            <h2 className="mt-2 text-4xl font-black tracking-normal">{dict.home.suppliersTitle}</h2>
+            <h2 className="mt-2 text-4xl font-black tracking-normal">Verified Yiwu Christmas Suppliers</h2>
           </div>
-          <p className="max-w-xl text-[#5f6864]">{dict.pages.suppliersSubtitle}</p>
+          <p className="max-w-xl text-[#5f6864]">Real storefronts from Yiwu Christmas product market</p>
         </div>
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          {suppliers.map((supplier) => (
-            <article key={supplier.id} className="rounded-[22px] border border-[#e6e1d8] bg-white p-6 soft-shadow">
-              <div className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="h-20 w-20 shrink-0 rounded-full bg-cover bg-center ring-4 ring-[#eefaf5]" style={{ backgroundImage: `url(${firstImage([supplier.coverImage, ...supplier.storeImages])})` }} />
-                  <div className="min-w-0">
-                    <span className="rounded-full bg-[#eefaf5] px-3 py-1 text-xs font-black text-[#0b8f5a]">{supplier.verified ? dict.common.verifiedSupplier : dict.common.goldSupplier}</span>
-                    <h3 className="mt-3 text-2xl font-black">{supplierDisplayName(supplier, locale)}</h3>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-3 text-sm">
-                  <SupplierLine label="Company" value={supplierDisplayName(supplier, locale)} />
-                  <SupplierLine label="Rating" value={`${supplier.rating.toFixed(1)} ★ (${supplier.reviewCount})`} />
-                  <SupplierLine label="Booth" value={`${supplier.marketDistrict} ${supplier.floor ?? ""} #${supplier.boothNumber}`} />
-                  <SupplierLine label="Categories" value={categoryNames(supplier.mainCategories, locale)} />
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <a className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#0b8f5a] px-4 text-sm font-black text-white" href={`https://wa.me/${supplier.whatsapp}`}>
-                    WhatsApp
-                  </a>
-                  <a className="inline-flex min-h-11 items-center justify-center rounded-md bg-white px-4 text-sm font-black text-[#013f29] ring-1 ring-[#d7e4df]" href={`mailto:${supplier.email}`}>
-                    Email
-                  </a>
-                  <Link className="col-span-2 inline-flex min-h-11 items-center justify-center rounded-md bg-[#ef3340] px-4 text-sm font-black text-white" href={localePath(locale, `/suppliers/${supplier.slug}`)}>
-                    Visit / Contact Supplier
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+        <VerifiedSupplierGrid locale={locale} suppliers={suppliers} />
       </section>
 
       <section className="bg-[#f7f1e8] py-14">
@@ -133,15 +100,6 @@ export default async function SuppliersPage({ params }: PageProps) {
   );
 }
 
-function SupplierLine({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="flex items-start justify-between gap-4 rounded-md bg-[#f5f7f6] p-3">
-      <small className="font-black uppercase text-[#7a8580]">{label}</small>
-      <strong className="text-right text-[#101615]">{value}</strong>
-    </span>
-  );
-}
-
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <span className="flex items-start justify-between gap-4 rounded-md bg-[#f5f7f6] p-3">
@@ -155,12 +113,4 @@ function supplierName(supplierId: string, locale: "en" | "zh") {
   const supplier = suppliers.find((item) => item.id === supplierId);
   if (!supplier) return supplierId;
   return supplierDisplayName(supplier, locale);
-}
-
-function categoryNames(ids: string[], locale: "en" | "zh") {
-  return ids
-    .map((id) => categories.find((category) => category.id === id))
-    .filter((category) => Boolean(category))
-    .map((category) => (locale === "zh" ? category!.nameZh : category!.nameEn))
-    .join(", ");
 }

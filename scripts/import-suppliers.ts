@@ -10,6 +10,10 @@ function normalizeSupplier(row: Record<string, unknown>, index: number): Supplie
   return {
     id,
     slug: text(row.slug) || fallbackId,
+    storefrontImage: text(row.storefrontImage) || text(row.coverImage) || "/images/yiwu-christmas-store.jpeg",
+    businessName: text(row.businessName) || companyNameEn || companyNameZh,
+    category: text(row.category) || listValue(row.mainCategories).join(", "),
+    marketAddress: text(row.marketAddress) || text(row.addressEn) || text(row.addressZh),
     companyNameZh,
     companyNameEn,
     boothNumber: text(row.boothNumber),

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { ContactButtons } from "@/components/ContactButtons";
 import { prisma } from "@/lib/db";
+import { isValidEmail, sendInquiryNotification, type InquiryEmailPayload } from "@/lib/inquiry-email";
 import { getLocaleFromParams, localePath } from "@/lib/i18n";
 import { getDictionary } from "@/messages";
 
@@ -43,7 +44,7 @@ export default async function ContactPage({ params, searchParams }: PageProps) {
           <input name="productId" type="hidden" value={product?.id ?? ""} />
           <input name="merchantId" type="hidden" value={targetMerchant?.id ?? ""} />
           <Input label="Name" name="buyerName" />
-          <Input label="Email" name="buyerEmail" />
+          <Input label="Email" name="buyerEmail" type="email" required />
           <Input label="WhatsApp" name="buyerWhatsapp" />
           <Input label="Country" name="country" />
           <Input label="Quantity" name="quantity" />
@@ -66,30 +67,52 @@ export default async function ContactPage({ params, searchParams }: PageProps) {
 async function saveInquiry(formData: FormData) {
   "use server";
   const locale = field(formData, "locale") === "en" ? "en" : "zh";
-  await prisma.inquiry.create({
-    data: {
-      productId: field(formData, "productId") || null,
-      merchantId: field(formData, "merchantId") || null,
-      buyerName: field(formData, "buyerName") || "Buyer",
-      buyerEmail: field(formData, "buyerEmail"),
-      buyerWhatsapp: field(formData, "buyerWhatsapp"),
-      country: field(formData, "country"),
-      quantity: field(formData, "quantity"),
-      budget: field(formData, "budget"),
-      message: field(formData, "message") || "Please send quotation.",
-      status: "new"
-    }
-  });
-  revalidatePath(localePath(locale, "/dashboard/admin"));
-  revalidatePath(localePath(locale, "/dashboard/admin/inquiries"));
+  const data: InquiryEmailPayload = {
+    productId: field(formData, "productId"),
+    merchantId: field(formData, "merchantId"),
+    buyerName: field(formData, "buyerName") || "Buyer",
+    buyerEmail: field(formData, "buyerEmail"),
+    buyerWhatsapp: field(formData, "buyerWhatsapp"),
+    country: field(formData, "country"),
+    quantity: field(formData, "quantity"),
+    budget: field(formData, "budget"),
+    message: field(formData, "message") || "Please send quotation."
+  };
+
+  if (!isValidEmail(data.buyerEmail)) {
+    throw new Error("A valid email address is required.");
+  }
+
+  await sendInquiryNotification(data);
+
+  try {
+    await prisma.inquiry.create({
+      data: {
+        productId: data.productId || null,
+        merchantId: data.merchantId || null,
+        buyerName: data.buyerName,
+        buyerEmail: data.buyerEmail,
+        buyerWhatsapp: data.buyerWhatsapp,
+        country: data.country,
+        quantity: data.quantity,
+        budget: data.budget,
+        message: data.message,
+        status: "new"
+      }
+    });
+    revalidatePath(localePath(locale, "/dashboard/admin"));
+    revalidatePath(localePath(locale, "/dashboard/admin/inquiries"));
+  } catch {
+    // The notification email is retained even when the production database is unavailable.
+  }
   redirect(`${localePath(locale, "/contact")}?sent=1`);
 }
 
-function Input({ label, name }: { label: string; name: string }) {
+function Input({ label, name, required = false, type = "text" }: { label: string; name: string; required?: boolean; type?: string }) {
   return (
     <label className="mb-5 grid gap-2 text-sm font-bold">
       {label}
-      <input name={name} className="min-h-12 rounded-md border border-[#d8dedb] px-4 outline-none focus:border-[#013f29]" />
+      <input name={name} type={type} required={required} className="min-h-12 rounded-md border border-[#d8dedb] px-4 outline-none focus:border-[#013f29]" />
     </label>
   );
 }
