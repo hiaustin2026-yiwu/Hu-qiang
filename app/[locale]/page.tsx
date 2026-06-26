@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AISourcingFlow } from "@/components/AISourcingFlow";
 import { ContactButtons } from "@/components/ContactButtons";
-import { ProductImage } from "@/components/ProductImage";
 import { SafeImage } from "@/components/SafeImage";
 import { VerifiedSupplierGrid } from "@/components/VerifiedSupplierGrid";
-import { products as mockProducts, suppliers as mockSuppliers } from "@/data";
-import { prisma } from "@/lib/db";
+import { categories, products as mockProducts, suppliers as mockSuppliers } from "@/data";
 import { getLocaleFromParams, localePath } from "@/lib/i18n";
 import { getDictionary } from "@/messages";
 
@@ -37,9 +35,9 @@ export default async function HomePage({ params }: PageProps) {
   const { locale: value } = await params;
   const locale = getLocaleFromParams(value);
   const dict = getDictionary(locale);
-  const { dbMerchants, dbProducts } = await getHomeData();
-  const featuredProducts = dbProducts.slice(0, 6);
-  const featuredCategories = Array.from(new Set(dbProducts.map((product) => product.category))).slice(0, 8);
+  const featuredProducts = [...mockProducts.filter((product) => product.featured), ...mockProducts].slice(0, 6);
+  const featuredCategories = categories.slice(0, 8);
+  const featuredMerchants = mockSuppliers.slice(0, 5);
 
   return (
     <main>
@@ -165,13 +163,13 @@ export default async function HomePage({ params }: PageProps) {
           <p className="max-w-xl text-[#5f6864]">{dict.home.featureSubtitle}</p>
         </div>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-5">
-          {featuredCategories.map((category, index) => (
-            <Link key={category} href={localePath(locale, `/products?category=${encodeURIComponent(category)}`)} className="group overflow-hidden rounded-[18px] border border-[#e6e1d8] bg-white soft-shadow">
-              <ProductImage className="h-44 transition duration-300 group-hover:scale-105" position={`${40 + index * 4}% 50%`} />
+          {featuredCategories.map((category) => (
+            <Link key={category.id} href={localePath(locale, `/products?category=${encodeURIComponent(category.slug)}`)} className="group overflow-hidden rounded-[18px] border border-[#e6e1d8] bg-white soft-shadow">
+              <SafeImage className="h-44 w-full object-cover transition duration-300 group-hover:scale-105" src={category.image} alt={locale === "zh" ? category.nameZh : category.nameEn} />
               <div className="p-5">
-                <h3 className="text-xl font-black">{category}</h3>
+                <h3 className="text-xl font-black">{locale === "zh" ? category.nameZh : category.nameEn}</h3>
                 <p className="mt-3 text-sm leading-6 text-[#5f6864]">
-                  {locale === "zh" ? "来自 SQLite 数据库的义乌圣诞用品分类。" : "Yiwu Christmas product category loaded from SQLite database."}
+                  {locale === "zh" ? category.descriptionZh : category.descriptionEn}
                 </p>
               </div>
             </Link>
@@ -192,12 +190,12 @@ export default async function HomePage({ params }: PageProps) {
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {featuredProducts.map((product) => (
             <article key={product.id} className="overflow-hidden rounded-[18px] border border-[#e6e1d8] bg-white soft-shadow">
-              <Link href={localePath(locale, `/products?sku=${encodeURIComponent(product.sku)}`)}>
-                <SafeImage className="h-48 w-full object-cover" src={product.images[0]?.imageUrl ?? product.merchant.coverImage} alt={locale === "zh" ? product.nameCN : product.nameEN} />
+              <Link href={localePath(locale, `/products/${product.slug}`)}>
+                <SafeImage className="h-48 w-full bg-white object-cover" src={product.images[0]} alt={locale === "zh" ? product.nameZh : product.nameEn} />
               </Link>
               <div className="p-5">
-                <Link href={localePath(locale, `/products?sku=${encodeURIComponent(product.sku)}`)}>
-                  <h3 className="text-xl font-black">{locale === "zh" ? product.nameCN : product.nameEN}</h3>
+                <Link href={localePath(locale, `/products/${product.slug}`)}>
+                  <h3 className="text-xl font-black">{locale === "zh" ? product.nameZh : product.nameEn}</h3>
                 </Link>
                 <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                   <span className="rounded-md bg-[#f5f7f6] p-3">
@@ -206,10 +204,10 @@ export default async function HomePage({ params }: PageProps) {
                   </span>
                   <span className="rounded-md bg-[#f5f7f6] p-3">
                     <small className="block font-black uppercase text-[#7a8580]">{dict.ai.price}</small>
-                    <strong>{product.currency} {product.price}</strong>
+                    <strong>{product.priceRange}</strong>
                   </span>
                 </div>
-                <Link href={localePath(locale, "/contact")} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-[#ef3340] px-4 font-black text-white">
+                <Link href={localePath(locale, `/contact?product=${product.id}&merchant=${product.supplierId}`)} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-[#ef3340] px-4 font-black text-white">
                   Send Inquiry
                 </Link>
               </div>
@@ -225,12 +223,12 @@ export default async function HomePage({ params }: PageProps) {
             <h2 className="mt-2 text-4xl font-black tracking-normal md:text-5xl">{dict.home.suppliersTitle}</h2>
           </div>
           <div className="grid gap-5 md:grid-cols-3">
-            {dbMerchants.map((merchant) => (
-              <Link key={merchant.id} href={localePath(locale, "/suppliers")} className="rounded-[18px] bg-white p-5 text-[#101615]">
+            {featuredMerchants.map((merchant) => (
+              <Link key={merchant.id} href={localePath(locale, `/suppliers/${merchant.slug}`)} className="rounded-[18px] bg-white p-5 text-[#101615]">
                 <span className="text-xs font-black uppercase text-[#b91c1c]">{merchant.verified ? dict.common.verifiedSupplier : dict.common.goldSupplier}</span>
-                <h3 className="mt-3 text-lg font-black">{merchant.name}</h3>
-                <p className="mt-2 text-sm text-[#5f6864]">{merchant.market} / {merchant.district} / {merchant.booth}</p>
-                <p className="mt-3 text-sm font-black">{merchant.country}</p>
+                <h3 className="mt-3 text-lg font-black">{merchant.businessName}</h3>
+                <p className="mt-2 text-sm text-[#5f6864]">{merchant.marketAddress}</p>
+                <p className="mt-3 text-sm font-black">China</p>
               </Link>
             ))}
           </div>
@@ -246,53 +244,4 @@ export default async function HomePage({ params }: PageProps) {
       </section>
     </main>
   );
-}
-
-async function getHomeData() {
-  try {
-    const [dbMerchants, dbProducts] = await Promise.all([
-      prisma.merchant.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5
-      }),
-      prisma.product.findMany({
-        include: {
-          merchant: true,
-          images: { orderBy: { sort: "asc" } }
-        },
-        orderBy: { createdAt: "desc" },
-        take: 30
-      })
-    ]);
-    return { dbMerchants, dbProducts };
-  } catch {
-    const dbMerchants = mockSuppliers.slice(0, 5).map((supplier) => ({
-      booth: supplier.boothNumber,
-      country: "China",
-      district: supplier.marketDistrict,
-      id: supplier.id,
-      market: "Yiwu International Trade Market",
-      name: supplier.companyNameEn,
-      verified: supplier.verified
-    }));
-    const dbProducts = mockProducts.slice(0, 30).map((product) => {
-      const supplier = mockSuppliers.find((item) => item.id === product.supplierId) ?? mockSuppliers[0];
-      return {
-        category: product.tags[0] ?? product.categoryId,
-        currency: "USD",
-        id: product.id,
-        images: product.images.map((imageUrl) => ({ imageUrl })),
-        merchant: {
-          coverImage: supplier.coverImage,
-          name: supplier.companyNameEn
-        },
-        moq: product.moq,
-        nameCN: product.nameZh,
-        nameEN: product.nameEn,
-        price: product.priceRange.replace("$", ""),
-        sku: product.sku
-      };
-    });
-    return { dbMerchants, dbProducts };
-  }
 }
